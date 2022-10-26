@@ -23,6 +23,12 @@ func Test_Watch(t *testing.T) {
 	pingCmd.Stdout = pingBuffer
 	require.NoError(t, pingCmd.Start())
 
+	go func() {
+		time.Sleep(5 * time.Second)
+		require.NoError(t, pingCmd.Process.Kill())
+		require.NoError(t, pingCmd.Process.Release())
+	}()
+
 	time.Sleep(time.Second * 1)
 
 	watchBuffer := bytes.NewBuffer([]byte{})
