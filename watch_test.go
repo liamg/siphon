@@ -23,11 +23,7 @@ func Test_Watch(t *testing.T) {
 	pingCmd.Stdout = pingBuffer
 	require.NoError(t, pingCmd.Start())
 
-	go func() {
-		time.Sleep(5 * time.Second)
-		require.NoError(t, pingCmd.Process.Kill())
-		require.NoError(t, pingCmd.Process.Release())
-	}()
+	time.Sleep(time.Second)
 
 	watchBuffer := bytes.NewBuffer([]byte{})
 
@@ -35,9 +31,13 @@ func Test_Watch(t *testing.T) {
 	watchCmd.Stdout = watchBuffer
 	require.NoError(t, watchCmd.Start())
 
-	_ = pingCmd.Wait()
+	time.Sleep(5 * time.Second)
+	require.NoError(t, pingCmd.Process.Kill())
+	require.NoError(t, pingCmd.Process.Release())
+
 	_ = watchCmd.Wait()
 
-	assert.True(t, strings.HasSuffix(pingBuffer.String(), watchBuffer.String()))
-	assert.Greater(t, len(watchBuffer.String()), 0)
+	watchOutput := watchBuffer.String()
+	assert.True(t, strings.HasSuffix(pingBuffer.String(), watchOutput))
+	assert.Greater(t, len(watchOutput), 0)
 }
