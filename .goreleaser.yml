@@ -1,0 +1,31 @@
+builds:
+  - id: siphon
+    main: .
+    binary: siphon
+    ldflags:
+      - "-s -w -extldflags '-fno-PIC -static'"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - "amd64"
+      - "arm64"
+      - "386"
+      - "arm"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+archives:
+  - format: binary
+    name_template: "{{ .Binary}}-{{ .Os }}-{{ .Arch }}"
+
+release:
+  prerelease: auto
+  github:
+    owner: liamg
+    name: siphon
