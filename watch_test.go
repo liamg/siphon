@@ -29,8 +29,6 @@ func Test_Watch(t *testing.T) {
 		require.NoError(t, pingCmd.Process.Release())
 	}()
 
-	time.Sleep(time.Second * 1)
-
 	watchBuffer := bytes.NewBuffer([]byte{})
 
 	watchCmd := exec.Command("go", "run", ".", strconv.Itoa(pingCmd.Process.Pid))
