@@ -19,11 +19,11 @@ func Test_Watch(t *testing.T) {
 	require.Equal(t, 0, os.Getuid(), "test must be run as root")
 
 	pingBuffer := bytes.NewBuffer([]byte{})
-	pingCmd := exec.Command("ping", "8.8.8.8")
+	pingCmd := exec.Command("ping", "127.0.0.1")
 	pingCmd.Stdout = pingBuffer
 	require.NoError(t, pingCmd.Start())
 
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second)
 
 	watchBuffer := bytes.NewBuffer([]byte{})
 
@@ -31,9 +31,13 @@ func Test_Watch(t *testing.T) {
 	watchCmd.Stdout = watchBuffer
 	require.NoError(t, watchCmd.Start())
 
-	_ = pingCmd.Wait()
+	time.Sleep(5 * time.Second)
+	require.NoError(t, pingCmd.Process.Kill())
+	require.NoError(t, pingCmd.Process.Release())
+
 	_ = watchCmd.Wait()
 
-	assert.True(t, strings.HasSuffix(pingBuffer.String(), watchBuffer.String()))
-	assert.Greater(t, len(watchBuffer.String()), 0)
+	watchOutput := watchBuffer.String()
+	assert.True(t, strings.HasSuffix(pingBuffer.String(), watchOutput))
+	assert.Greater(t, len(watchOutput), 0)
 }
