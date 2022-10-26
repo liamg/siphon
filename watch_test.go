@@ -19,7 +19,7 @@ func Test_Watch(t *testing.T) {
 	require.Equal(t, 0, os.Getuid(), "test must be run as root")
 
 	pingBuffer := bytes.NewBuffer([]byte{})
-	pingCmd := exec.Command("ping", "8.8.8.8")
+	pingCmd := exec.Command("ping", "127.0.0.1")
 	pingCmd.Stdout = pingBuffer
 	require.NoError(t, pingCmd.Start())
 
