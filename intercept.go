@@ -72,39 +72,56 @@ func interceptReadsAndWrites(pid int) (fd uint64, data []byte, err error) {
 		return 0, nil, fmt.Errorf("process interrupted")
 	}
 
-	defer func() {
+	var exited bool
+
+	waitForExit := func() error {
+
+		if exited {
+			return nil
+		}
+		exited = true
 
 		// continue the syscall we intercepted
 		err = syscall.PtraceSyscall(pid, 0)
 		if err != nil {
-			err = fmt.Errorf("could not continue process: %w", err)
-			return
+			return fmt.Errorf("could not continue process: %w", err)
 		}
 
 		// and wait for it to finish
-		status := syscall.WaitStatus(0)
+		status = syscall.WaitStatus(0)
 		_, err = syscall.Wait4(pid, &status, 0, nil)
 		if err != nil {
-			err = fmt.Errorf("could not wait for process: %w", err)
-			return
+			return err
 		}
 
-		// process exited
-		if status.Exited() {
-			err = fmt.Errorf("process exited")
-			return
-		}
+		return nil
+	}
 
-		// if interrupted, stop tracing
-		if status.StopSignal().String() == "interrupt" {
-			_ = syscall.PtraceSyscall(pid, int(status.StopSignal()))
-			err = fmt.Errorf("process interrupted")
-			return
+	defer func() {
+		err = waitForExit()
+		if err == nil {
+			// process exited
+			if status.Exited() {
+				err = fmt.Errorf("process exited")
+				return
+			}
+
+			// if interrupted, stop tracing
+			if status.StopSignal().String() == "interrupt" {
+				_ = syscall.PtraceSyscall(pid, int(status.StopSignal()))
+				err = fmt.Errorf("process interrupted")
+				return
+			}
 		}
 	}()
 
 	// if we have a syscall, examine it...
 	if status.TrapCause()&int(syscall.SIGTRAP|0x80) > 0 {
+
+		// wait for syscall exit
+		if err := waitForExit(); err != nil {
+			return 0, nil, err
+		}
 
 		// read registers
 		regs := &syscall.PtraceRegs{}
